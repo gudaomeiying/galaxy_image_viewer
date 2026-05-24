@@ -7,8 +7,6 @@ workflows:
       flutter: 3.44.0
       xcode: 16
       java: 17
-      vars:
-        APP_NAME: Galaxy Image Viewer
     scripts:
       - name: Get Flutter dependencies
         script: flutter pub get
@@ -18,8 +16,11 @@ workflows:
           echo "android.minSdkVersion=21" >> gradle.properties
           cd ..
           flutter build apk --release
+      - name: List build outputs
+        script: ls -la build/app/outputs/flutter-apk/
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
+      - build/app/outputs/flutter-apk/*.apk
 
   ios_build:
     name: iOS Build
@@ -29,8 +30,6 @@ workflows:
       flutter: 3.44.0
       xcode: 16
       cocoapods: 1.15.2
-      vars:
-        APP_NAME: Galaxy Image Viewer
     scripts:
       - name: Get Flutter dependencies
         script: flutter pub get
@@ -41,5 +40,12 @@ workflows:
           cd ..
       - name: Build iOS IPA
         script: flutter build ipa --release --no-codesign
+      - name: List build outputs
+        script: |
+          ls -la build/ios/ipa/ || echo "IPA directory not found"
+          ls -la build/ios/archive/ || echo "Archive directory not found"
+          find build/ios -name "*.ipa" -o -name "*.app" 2>/dev/null || echo "No IPA found"
     artifacts:
       - build/ios/ipa/*.ipa
+      - build/ios/archive/**/*.ipa
+      - build/ios/**/*.ipa
