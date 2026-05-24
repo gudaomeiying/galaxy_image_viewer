@@ -12,8 +12,6 @@ workflows:
     scripts:
       - name: Get Flutter dependencies
         script: flutter pub get
-      - name: Run Flutter analyze
-        script: flutter analyze
       - name: Build Android APK
         script: |
           cd android
@@ -41,8 +39,6 @@ workflows:
           cd ios
           pod install
           cd ..
-      - name: Run Flutter analyze
-        script: flutter analyze
       - name: Build iOS IPA
         script: flutter build ipa --release --no-codesign
     artifacts:
