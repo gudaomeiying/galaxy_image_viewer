@@ -1,51 +1,61 @@
 workflows:
-  android_build:
-    name: Android Build
+  ios-unsigned:
+    name: iOS Unsigned IPA
+    max_build_duration: 60
     instance_type: mac_mini_m2
-    max_build_duration: 30
-    environment:
-      flutter: 3.44.0
-      xcode: 16
-      java: 17
-    scripts:
-      - name: Get Flutter dependencies
-        script: flutter pub get
-      - name: Build Android APK
-        script: |
-          cd android
-          echo "android.minSdkVersion=21" >> gradle.properties
-          cd ..
-          flutter build apk --release
-      - name: List build outputs
-        script: ls -la build/app/outputs/flutter-apk/
-    artifacts:
-      - build/app/outputs/flutter-apk/app-release.apk
-      - build/app/outputs/flutter-apk/*.apk
 
-  ios_build:
-    name: iOS Build
-    instance_type: mac_mini_m2
-    max_build_duration: 30
     environment:
-      flutter: 3.44.0
-      xcode: 16
-      cocoapods: 1.15.2
+      node: 20.17.0
+      xcode: latest
+      cocoapods: default
+
     scripts:
-      - name: Get Flutter dependencies
-        script: flutter pub get
-      - name: Install CocoaPods dependencies
+      # 1. 安装依赖
+      - name: Install dependencies
+        script: npm install
+
+      # 2. 用 expo prebuild 生成 iOS 原生工程
+      - name: Expo prebuild (iOS)
+        script: npx expo prebuild --platform ios --clean
+
+      # 3. 安装 CocoaPods 依赖
+      - name: Install CocoaPods
         script: |
           cd ios
           pod install
-          cd ..
-      - name: Build iOS IPA
-        script: flutter build ipa --release --no-codesign
-      - name: List build outputs
+
+      # 4. 构建未签名 IPA（CODE_SIGNING_ALLOWED=NO）
+      - name: Build unsigned IPA
         script: |
-          ls -la build/ios/ipa/ || echo "IPA directory not found"
-          ls -la build/ios/archive/ || echo "Archive directory not found"
-          find build/ios -name "*.ipa" -o -name "*.app" 2>/dev/null || echo "No IPA found"
+          cd ios
+          xcodebuild \
+            -workspace Tetris.xcworkspace \
+            -scheme Tetris \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath ./build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            | xcpretty
+
+      # 5. 将 .app 打包成 .ipa
+      - name: Package IPA
+        script: |
+          APP_PATH=$(find ios/build -name "*.app" | head -1)
+          mkdir -p ios/build/ipa/Payload
+          cp -r "$APP_PATH" ios/build/ipa/Payload/
+          cd ios/build/ipa
+          zip -r ../Tetris-unsigned.ipa Payload
+          echo "✅ IPA created at ios/build/Tetris-unsigned.ipa"
+
     artifacts:
-      - build/ios/ipa/*.ipa
-      - build/ios/archive/**/*.ipa
-      - build/ios/**/*.ipa
+      - ios/build/Tetris-unsigned.ipa
+
+    publishing:
+      email:
+        recipients:
+          - 345422168@qq.com   # ← 改成你的邮箱，构建完发送下载链接
+        notify:
+          success: true
+          failure: true
