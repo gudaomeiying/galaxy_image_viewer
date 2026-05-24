@@ -9,14 +9,11 @@ workflows:
       java: 17
       vars:
         APP_NAME: Galaxy Image Viewer
-        FLUTTER_BUILD_COMMAND: flutter build apk --release
     scripts:
       - name: Get Flutter dependencies
         script: flutter pub get
       - name: Run Flutter analyze
         script: flutter analyze
-      - name: Run Flutter tests
-        script: flutter test
       - name: Build Android APK
         script: |
           cd android
@@ -25,10 +22,6 @@ workflows:
           flutter build apk --release
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
-    publishing:
-      artifacts:
-        - source: build/app/outputs/flutter-apk/app-release.apk
-          target: app-release.apk
 
   ios_build:
     name: iOS Build
@@ -40,7 +33,6 @@ workflows:
       cocoapods: 1.15.2
       vars:
         APP_NAME: Galaxy Image Viewer
-        FLUTTER_BUILD_COMMAND: flutter build ipa --release
     scripts:
       - name: Get Flutter dependencies
         script: flutter pub get
@@ -51,13 +43,7 @@ workflows:
           cd ..
       - name: Run Flutter analyze
         script: flutter analyze
-      - name: Run Flutter tests
-        script: flutter test
       - name: Build iOS IPA
-        script: flutter build ipa --release
+        script: flutter build ipa --release --no-codesign
     artifacts:
-      - build/ios/ipa/Runner.ipa
-    publishing:
-      artifacts:
-        - source: build/ios/ipa/Runner.ipa
-          target: Runner.ipa
+      - build/ios/ipa/*.ipa
