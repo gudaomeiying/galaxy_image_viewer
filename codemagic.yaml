@@ -16,8 +16,6 @@ workflows:
           echo "android.minSdkVersion=21" >> gradle.properties
           cd ..
           flutter build apk --release
-      - name: List build outputs
-        script: ls -la build/app/outputs/flutter-apk/
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
       - build/app/outputs/flutter-apk/*.apk
@@ -39,13 +37,12 @@ workflows:
           pod install
           cd ..
       - name: Build iOS IPA
-        script: flutter build ipa --release --no-codesign
+        script: |
+          flutter build ipa --release
       - name: List build outputs
         script: |
           ls -la build/ios/ipa/ || echo "IPA directory not found"
-          ls -la build/ios/archive/ || echo "Archive directory not found"
-          find build/ios -name "*.ipa" -o -name "*.app" 2>/dev/null || echo "No IPA found"
+          find build/ios -name "*.ipa" 2>/dev/null
     artifacts:
       - build/ios/ipa/*.ipa
-      - build/ios/archive/**/*.ipa
       - build/ios/**/*.ipa
